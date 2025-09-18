@@ -3,7 +3,6 @@ import tkinter as tk
 from tkinter import scrolledtext, messagebox
 from tkinter import simpledialog
 import threading
-from tkinter import filedialog  # For photo selection
 
 # Client setup
 client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -17,7 +16,7 @@ except Exception as e:
 # GUI setup
 window = tk.Tk()
 window.title("Mini WhatsApp")
-window.geometry("500x600")  # Increased size for photo
+window.geometry("400x500")  # Standard size for chat
 
 # Nickname input
 nickname = tk.simpledialog.askstring("Nickname", "Please choose a nickname", parent=window)
@@ -66,28 +65,6 @@ def send_message(event=None):  # Allow event for Enter key
 send_button = tk.Button(input_frame, text="Send", command=send_message)
 send_button.grid(row=0, column=1, padx=5, pady=5)
 
-# Photo send button
-def send_photo():
-    file_path = filedialog.askopenfilename(filetypes=[("Image files", "*.png *.jpg *.jpeg *.gif")])
-    if file_path:
-        try:
-            with open(file_path, 'rb') as image_file:
-                image_data = image_file.read()
-                # Send as text (base64 for simplicity, limited to 1024 bytes for now)
-                import base64
-                encoded_data = base64.b64encode(image_data[:1024]).decode('utf-8')  # Limit to 1024 bytes
-                full_message = f'{nickname}: [PHOTO] {encoded_data}'
-                client.send(full_message.encode('utf-8'))
-                chat_display.config(state='normal')
-                chat_display.insert(tk.END, f'{nickname}: [PHOTO SENT]\n')
-                chat_display.config(state='disabled')
-                chat_display.see(tk.END)
-        except Exception as e:
-            messagebox.showerror("Photo Error", f"Failed to send photo: {e}")
-
-photo_button = tk.Button(window, text="Send Photo", command=send_photo)
-photo_button.grid(row=2, column=0, columnspan=2, padx=10, pady=5)
-
 # Bind Enter key to send_message
 window.bind('<Return>', send_message)
 
@@ -100,10 +77,7 @@ def receive_messages():
             message = client.recv(1024).decode('utf-8')
             if message != last_sent:  # Skip if it's the last sent message
                 chat_display.config(state='normal')
-                if "[PHOTO]" in message:
-                    chat_display.insert(tk.END, f"{message.split(':')[0]}: [PHOTO RECEIVED]\n")
-                else:
-                    chat_display.insert(tk.END, message + '\n')
+                chat_display.insert(tk.END, message + '\n')
                 chat_display.config(state='disabled')
                 chat_display.see(tk.END)
             last_sent = message
